@@ -4,7 +4,8 @@ name: Build NOVA CLIENT
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -20,32 +21,51 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
       - name: Extract NOVA source
         run: |
           mkdir -p source
-          ZIP=$(find . -maxdepth 1 -iname '*.zip' -print -quit)
+
+          ZIP=$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)
+
           if [ -z "$ZIP" ]; then
             echo "Source ZIP not found"
             exit 1
           fi
+
           unzip -q "$ZIP" -d source
 
-      - name: Find and build NOVA
+      - name: Find NOVA project
+        id: project
         run: |
           BUILD=$(find source -type f \( -name build.gradle -o -name build.gradle.kts \) -print -quit)
+
           if [ -z "$BUILD" ]; then
             echo "Gradle build file not found"
             exit 1
           fi
+
           DIR=$(dirname "$BUILD")
-          if [ -f "$DIR/gradlew" ]; then
-            chmod +x "$DIR/gradlew"
-            cd "$DIR"
-            ./gradlew build --no-daemon
+
+          if [ -f "$DIR/settings.gradle" ] || [ -f "$DIR/settings.gradle.kts" ]; then
+            echo "dir=$DIR" >> "$GITHUB_OUTPUT"
           else
-            echo "Gradle wrapper not found"
-            exit 1
+            ROOT=$(find source -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
+
+            if [ -n "$ROOT" ]; then
+              echo "dir=$(dirname "$ROOT")" >> "$GITHUB_OUTPUT"
+            else
+              echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+            fi
           fi
+
+      - name: Build NOVA
+        run: |
+          gradle -p "${{ steps.project.outputs.dir }}" build --no-daemon
 
       - name: Upload NOVA JAR
         uses: actions/upload-artifact@v4
