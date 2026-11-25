@@ -4,8 +4,7 @@ name: Build NOVA CLIENT
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
@@ -21,21 +20,37 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.2.1'
-
       - name: Extract NOVA source
-        run: unzip NovaClient-Ultimate-Source.zip -d source
+        run: |
+          mkdir -p source
+          ZIP=$(find . -maxdepth 1 -iname '*.zip' -print -quit)
+          if [ -z "$ZIP" ]; then
+            echo "Source ZIP not found"
+            exit 1
+          fi
+          unzip -q "$ZIP" -d source
 
-      - name: Build NOVA
-        working-directory: source/nova-client
-        run: gradle build --no-daemon
+      - name: Find and build NOVA
+        run: |
+          BUILD=$(find source -type f \( -name build.gradle -o -name build.gradle.kts \) -print -quit)
+          if [ -z "$BUILD" ]; then
+            echo "Gradle build file not found"
+            exit 1
+          fi
+          DIR=$(dirname "$BUILD")
+          if [ -f "$DIR/gradlew" ]; then
+            chmod +x "$DIR/gradlew"
+            cd "$DIR"
+            ./gradlew build --no-daemon
+          else
+            echo "Gradle wrapper not found"
+            exit 1
+          fi
 
       - name: Upload NOVA JAR
         uses: actions/upload-artifact@v4
         with:
           name: NOVA-CLIENT-JAR
-          path: source/nova-client/build/libs/*.jar
+          path: source/**/build/libs/*.jar
+          if-no-files-found: error
           
