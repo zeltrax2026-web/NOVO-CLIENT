@@ -1,7 +1,9 @@
-pluginManagement {
-    repositories {
-        maven { name = 'Fabric'; url = 'https://fabricmc.net' }
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
+org.gradle.jvmargs=-Xmx2G
+org.gradle.parallel=true
+minecraft_version=1.21.11
+yarn_mappings=1.21.11+build.1
+loader_version=0.18.1
+fabric_api_version=0.141.1+1.21.11
+mod_version=0.1.0
+maven_group=com.nova
+archives_base_name=nova-client
