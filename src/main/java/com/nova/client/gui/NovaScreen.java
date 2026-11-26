@@ -22,7 +22,7 @@ public final class NovaScreen extends Screen {
             {"Compact HUD", "Target Info", "Status Panel", "Notifications"},
             {"Reduced Effects", "Low Animation Mode", "Performance Preset", "Profile Manager"}
     };
-    private final boolean[][] enabled = new boolean[MODULES.length];
+    private final boolean[][] enabled = new boolean[MODULES.length][4];
     private final List<HitBox> hitBoxes = new ArrayList<>();
     private int category = 0;
     private int panelX, panelY, panelW, panelH;
@@ -113,4 +113,5 @@ public final class NovaScreen extends Screen {
 
     @Override public boolean isPauseScreen() { return false; }
     private record HitBox(int x, int y, int w, int h, int a, int b) {}
-              }
+}
+
